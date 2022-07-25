@@ -4,6 +4,7 @@ from torchvision.io import read_image
 from torch.utils.data import Dataset
 import pandas as pd
 import os
+import numpy as np
 
 class Chexpert_dataset(Dataset):
     def __init__(self,path_to_csv,root_dir,columns,transform=None):
@@ -20,7 +21,8 @@ class Chexpert_dataset(Dataset):
         return len(self.labels)
     
     def __getitem__(self,idx):
-        img_name = os.path.join(self.root_dir,self.image_paths[idx])
+        image_path = self.image_paths[idx]
+        img_name = os.path.join(self.root_dir,image_path)
         image = read_image(img_name)
         image = image.repeat((3, 1, 1))
         image = image.float()
@@ -29,4 +31,4 @@ class Chexpert_dataset(Dataset):
         if self.transform:
             image = self.transform.forward(image)
         
-        return image, label
+        return image, label, image_path
