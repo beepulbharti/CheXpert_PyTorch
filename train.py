@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, SubsetRandomSampler, Subset
+from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from torchvision.models import densenet121, DenseNet121_Weights
 from tqdm import tqdm
