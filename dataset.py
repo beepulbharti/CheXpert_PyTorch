@@ -7,14 +7,15 @@ import os
 import numpy as np
 
 class Chexpert_dataset(Dataset):
-    def __init__(self,path_to_csv,root_dir,columns,transform=None):
+    def __init__(self,df,root_dir,columns,transform=None):
 
         super().__init__()
-        self.csv = pd.read_csv(path_to_csv,low_memory=False)
-        self.labels = self.csv[columns].values
-        self.group = self.csv['Sex'].values
+        self.df = df
+        # self.csv = pd.read_csv(path_to_csv,low_memory=False)
+        self.labels = self.df[columns].values
+        self.group = self.df['Sex'].values
         self.root_dir = root_dir
-        self.image_paths = self.csv['Path']
+        self.image_paths = self.df['Path'].values
         self.transform = transform
     
     def __len__(self):

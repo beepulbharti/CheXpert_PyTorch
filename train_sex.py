@@ -66,7 +66,7 @@ for epoch in range(num_epochs):
 
     # Training step
     for i, data in enumerate(tqdm(train_loader)):
-        image, label, _ = data
+        image, label, image_paths = data
         image = image.to(device)
         label = label.to(device)
 
