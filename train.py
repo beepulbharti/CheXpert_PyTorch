@@ -12,20 +12,26 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 import copy
+import wandb
+
+# Set condition and initialize wandb
+columns = ['grouped_condition']
+condition = columns[0]
+project_name = condition + '_classifier'
+wandb.init(project=project_name)
 
 # Enable GPU use
 os.environ['CUDE_VISIBLE_DEVICES'] = '0'
 device = torch.device("cuda:0" if torch.cuda.is_available() else "mps")
 
 # Set parameters to load training dataset
-path_to_csv = 'model_train.csv'
+path_to_csv = 'csvs/train/train_' + condition + '.csv'
 
 # Root dir (needs to be changed depending on if I am using remote or gaon)
 root_dir = '/Users/beepulbharti/Desktop'
 root_dir_gaon = '/export/gaon1/data/bbharti1'
 
 # Additional specifications
-columns = ['Atelectasis']
 transform = transforms.Resize((320,320))
 all_data = pd.read_csv(path_to_csv,low_memory=False)
 # all_data = Chexpert_dataset(path_to_csv,root_dir_gaon,columns,transform = transform)
@@ -40,7 +46,7 @@ model.classifier = nn.Linear(input_num,len(columns))
 # Set criterion and optimizer
 model = model.to(device)
 criterion = nn.BCELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-04,betas=(0.9,0.999))
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-04, betas=(0.9,0.999))
 
 # K-Fold Cross-validation
 # splitter = get_splits(all_data, n_splits=5)
@@ -49,7 +55,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-04,betas=(0.9,0.999))
 # train_loader = DataLoader(all_data,batch_size=16,shuffle=True)
 
 # Train the model for number of epochs  
-num_epochs = 2
+num_epochs = 3
 k = 0
 best_auc = 0
 
@@ -62,13 +68,18 @@ best_auc = 0
 
 # Create split for training and validation data
 x_ind = np.linspace(0,len(all_data)-1,len(all_data)).astype('int')
-a = all_data['Sex']
-train_ind, val_ind = train_test_split(x_ind,test_size=0.25,stratify=a)
+group = all_data['group']
+train_ind, val_ind = train_test_split(x_ind,test_size=0.25,stratify=group)
 
 # Create training data
 train_data = all_data.iloc[train_ind]
 train_set = Chexpert_dataset(train_data,root_dir_gaon,columns,transform=transform)
 train_loader = DataLoader(train_set, batch_size=16, shuffle=True)
+
+# Create validation data
+val_data = all_data.iloc[val_ind]
+val_set = Chexpert_dataset(val_data,root_dir_gaon,columns,transform=transform)
+val_loader = DataLoader(val_set, batch_size=16, shuffle=False)
 
 for epoch in range(num_epochs):
 
@@ -94,11 +105,6 @@ for epoch in range(num_epochs):
         optimizer.step()
     
     # Validation step
-
-    # Create validation data
-    val_data = all_data.iloc[val_ind]
-    val_set = Chexpert_dataset(val_data,root_dir_gaon,columns,transform=transform)
-    val_loader = DataLoader(val_set, batch_size=16, shuffle=False)
     output_list = []
     model.eval()
     torch.set_grad_enabled(False)
@@ -122,13 +128,17 @@ for epoch in range(num_epochs):
     print(f"Train loss: {epoch_train_loss:.4f}")
     print(f"Val loss: {epoch_val_loss:.4f}")
     print(f"Val AUC: {epoch_auc:.4f}")
+    wandb.log({'train_loss': epoch_train_loss, 'val_loss': epoch_val_loss,
+               'val_auc': epoch_auc, 'epoch': epoch + 1})
 
     if epoch_auc > best_auc:
         print('saving new model!')
         best_auc = epoch_auc
         best_model_state_dict = copy.deepcopy(model.state_dict())
+        # Save best model
+        torch.save(best_model_state_dict, os.path.join('pretrained_classifier', condition + '_model.pt'))
 
-
+'''
 # Re-evaluate using the best model
 model.load_state_dict(best_model_state_dict)
 model.to(device)
@@ -153,3 +163,4 @@ y_probs = torch.cat(output_list).cpu().ravel()
 d = {'Paths': paths, 'a': a, 'y':y, 'y_probs':y_probs }
 df = pd.DataFrame(d)
 df.to_csv('results_Atelectasis.csv')
+'''

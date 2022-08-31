@@ -188,6 +188,11 @@ class BinaryBalancer:
         # Getting the coefficients for the objective
         dr = [(g.nr * self.p[i], g.pr * self.p[i]) 
               for i, g in enumerate(self.__gr_list)]
+        # dr_1 = [(g.nr, g.pr) for i, g in enumerate(self.__gr_list)]
+        # dr_2 = [(self.p[i], self.p[i]) for i, g in enumerate(self.__gr_list)]
+        # print(dr)
+        # print(dr_1)
+        # print(dr_2)
         
         # Getting the overall error rates and group proportions
         s = self.overall_rates.acc
@@ -198,6 +203,7 @@ class BinaryBalancer:
                                (e - s) * r[1]]
                              for r in dr]).flatten()
         obj_bounds = [(0, 1)]
+        # print(obj_coefs)
         
         # Generating the pairs for comparison
         n_groups = len(self.groups)

@@ -40,3 +40,20 @@ def eo_postprocess(df):
     fair_model.adjust(goal='odds', summary=False)
     fair_yh = fair_model.predict(y_,a)
     return fair_yh, fair_model
+
+def get_base_rates(y,a,return_dict=False):
+    g = np.vstack([y,a]).T
+    groups = np.zeros(len(y))
+    group_list = [np.array([1,1]),np.array([1,0]),np.array([0,1]),np.array([0,0])]
+    for i, gr in enumerate(group_list):
+        gr_ind = np.where(np.all(g == gr,axis=1))
+        groups[gr_ind] = (i+1)
+    r = np.sum(groups == 1)/len(y)
+    s = np.sum(groups == 2)/len(y)
+    v = np.sum(groups == 3)/len(y)
+    w = np.sum(groups == 4)/len(y)
+    rates = {'r':r,'s':s,'v':v,'w':w}
+    if return_dict == True:
+        return rates, groups
+    else:
+        return rates

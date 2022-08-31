@@ -1,0 +1,24 @@
+{
+    "os": "Linux-5.4.0-62-generic-x86_64-with-glibc2.27",
+    "python": "3.10.4",
+    "heartbeatAt": "2022-08-16T19:37:22.925277",
+    "startedAt": "2022-08-16T19:37:22.329816",
+    "docker": null,
+    "gpu": "Quadro RTX 5000",
+    "gpu_count": 10,
+    "cpu_count": 96,
+    "cuda": "10.2.89",
+    "args": [],
+    "state": "running",
+    "program": "/cis/home/bbharti1/projects/CheXpert_PyTorch/train.py",
+    "codePath": "train.py",
+    "git": {
+        "remote": "https://github.com/beepulbharti/CheXpert_PyTorch",
+        "commit": "35e47a74ed25f6e2bdb4e7bda2da26e0987488fd"
+    },
+    "email": null,
+    "root": "/cis/home/bbharti1/projects/CheXpert_PyTorch",
+    "host": "gaon",
+    "username": "bbharti1",
+    "executable": "/cis/home/bbharti1/anaconda3/envs/cuda102/bin/python"
+}

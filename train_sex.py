@@ -10,13 +10,18 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
 import os
+import wandb
+
+# Initialize wandb
+wandb.init(project="sex_classifier_project")
 
 # Enable GPU use
 os.environ['CUDE_VISIBLE_DEVICES'] = '0'
 device = torch.device("cuda:0" if torch.cuda.is_available() else "mps")
 
-# Set parameters to load training dataset FOR sec classification
-path_to_csv = 'sex_model_train.csv'
+# Load csv and create dataframe
+path_to_csv = 'csvs/sex_model_train.csv'
+all_data = pd.read_csv(path_to_csv,low_memory=False)
 
 # Root dir (needs to be changed depending on if I am using remote or gaon)
 root_dir = '/Users/beepulbharti/Desktop'
@@ -26,7 +31,7 @@ root_dir_gaon = '/export/gaon1/data/bbharti1'
 columns = ['Sex']
 transform = transforms.Resize((320,320))
 data_csv = pd.read_csv(path_to_csv)
-all_data = Chexpert_dataset(path_to_csv,root_dir_gaon, columns, transform = transform)
+all_data = Chexpert_dataset(all_data,root_dir_gaon, columns, transform = transform)
 
 # Load Densenet121
 sex_model = densenet121(weights = DenseNet121_Weights.DEFAULT)
@@ -43,11 +48,11 @@ optimizer = torch.optim.Adam(sex_model.parameters(), lr=1e-04, betas=(0.9,0.999)
 sex_model = sex_model.to(device)
 
 # Train the model for number of epochs  
-num_epochs = 5
+num_epochs = 3
 
 # Split data in training and validation set
 indices = np.arange(len(all_data))
-train_ind, val_ind = train_test_split(indices, test_size=0.2, stratify = data_csv['Sex'])
+train_ind, val_ind = train_test_split(indices, test_size=0.1, stratify = data_csv['Sex'])
 train_data = Subset(all_data,train_ind)
 val_data = Subset(all_data,val_ind)
 
@@ -55,7 +60,7 @@ val_data = Subset(all_data,val_ind)
 train_loader = DataLoader(train_data, batch_size=16, shuffle=True)
 val_loader = DataLoader(val_data, batch_size=16, shuffle=False)
 
-best_loss = 100.0
+best_acc = 0
 for epoch in range(num_epochs):
 
     print(f"Started epoch {epoch + 1}")
@@ -83,6 +88,7 @@ for epoch in range(num_epochs):
     
     # Validation step
     sex_model.eval()
+    torch.set_grad_enabled(False)
     running_val_loss = 0
     running_val_acc = 0
 
@@ -102,12 +108,13 @@ for epoch in range(num_epochs):
     epoch_train_acc = running_train_acc / len(train_loader)
     epoch_val_acc = running_val_acc / len(val_loader)
     epoch_val_loss = running_val_loss / len(val_loader)
+    wandb.log({'train_loss': epoch_train_loss,'val_loss': epoch_val_loss, 'val_accuracy':epoch_val_acc})
 
     print(f"Train loss: {epoch_train_loss:.4f}")
     print(f"Val loss: {epoch_val_loss:.4f}")
+    print(f"Val acc: {epoch_val_acc:.4f}")
 
-    if epoch_val_loss < best_loss:
-        best_loss = epoch_val_loss
+    if epoch_val_acc > best_acc:
+        best_acc = epoch_val_acc
         best_sex_model_state_dict = copy.deepcopy(sex_model.state_dict())
-
-torch.save(best_sex_model_state_dict, os.path.join('pretrained_sex_model', 'model.pt'))
+        torch.save(best_sex_model_state_dict, os.path.join('pretrained_sex_model', 'model.pt'))
